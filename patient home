@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block content %}
+<h1>Hello, {{ g.user.name }}</h1>
+<div class="notice">This app is a support tool, not an emergency service. If you are in crisis or thinking of harming yourself, contact your local emergency number or a crisis line right away.</div>
+<div class="card"><h3>How are you feeling now?</h3>
+<form class="stack" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+<select name="score">{% for i in range(1,11) %}<option value="{{ i }}" {{ 'selected' if i==5 }}>{{ i }}{{ ' (very low)' if i==1 }}{{ ' (great)' if i==10 }}</option>{% endfor %}</select>
+<textarea name="note" maxlength="500" placeholder="Anything you'd like your therapist to know? (optional)"></textarea>
+<button class="btn">Save check-in</button></form></div>
+<div class="cols"><div class="card"><b>My heart rate (24h)</b>{{ spark(hr) }}</div>
+<div class="card"><b>My mood (last 14)</b>{{ spark(mood, lo=1, hi=10, color='#d68910') }}</div></div>{% endblock %}
