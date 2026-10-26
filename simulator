@@ -1,0 +1,45 @@
+"""Simulates a wearable sending sensor data to the server.
+
+Usage:  python simulator.py --token <DEVICE_TOKEN> [--url http://127.0.0.1:5000] [--interval 5] [--stress]
+Without --stress, a stress episode occurs randomly. With --stress, readings are persistently elevated.
+Swap generate() for real sensor reads (e.g. MAX30102 / GSR on an ESP32 or Raspberry Pi) in a real device.
+"""
+import argparse, json, random, time, urllib.request
+from datetime import datetime
+
+
+def generate(stressed, moving):
+    hr = random.gauss(105 if stressed else (95 if moving else 68), 5)
+    hrv = max(5, random.gauss(16 if stressed else 55, 6))
+    gsr = max(0.5, random.gauss(13 if stressed else 4, 1.2))
+    steps = random.randint(40, 120) if moving else random.randint(0, 5)
+    return dict(ts=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), heart_rate=round(hr, 1),
+                hrv=round(hrv, 1), skin_conductance=round(gsr, 2), steps=steps)
+
+
+def post(url, token, payload):
+    req = urllib.request.Request(url + "/api/readings", data=json.dumps(payload).encode(),
+                                 headers={"Content-Type": "application/json", "X-Device-Token": token})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return r.read().decode()
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--token", required=True)
+    ap.add_argument("--url", default="http://127.0.0.1:5000")
+    ap.add_argument("--interval", type=float, default=5)
+    ap.add_argument("--stress", action="store_true")
+    a = ap.parse_args()
+    episode = 0
+    while True:
+        if not a.stress and episode == 0 and random.random() < 0.05:
+            episode = random.randint(5, 15)
+        stressed = a.stress or episode > 0
+        episode = max(0, episode - 1)
+        reading = generate(stressed, moving=random.random() < 0.3 and not stressed)
+        try:
+            print(reading, "->", post(a.url, a.token, reading))
+        except Exception as e:
+            print("send failed:", e)
+        time.sleep(a.interval)
