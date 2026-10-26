@@ -1,0 +1,37 @@
+"""Demo data: python seed.py
+Therapist: therapist@demo.com / demo12345    Patient: patient@demo.com / demo12345"""
+import sqlite3, random
+from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash
+from app import init_db, DB
+
+init_db()
+c = sqlite3.connect(DB)
+pw = generate_password_hash("demo12345")
+if not c.execute("SELECT 1 FROM users WHERE email='therapist@demo.com'").fetchone():
+    c.execute("INSERT INTO users(name,email,password_hash,role) VALUES('Dr. Meena Iyer','therapist@demo.com',?,'therapist')", (pw,))
+    tid = c.execute("SELECT id FROM users WHERE email='therapist@demo.com'").fetchone()[0]
+    c.execute("INSERT INTO users(name,email,password_hash,role,therapist_id,device_token) "
+              "VALUES('Arun S.','patient@demo.com',?,'patient',?,'demo-device-token')", (pw, tid))
+    pid = c.execute("SELECT id FROM users WHERE email='patient@demo.com'").fetchone()[0]
+    t = datetime.utcnow() - timedelta(days=3)
+    random.seed(1)
+    while t < datetime.utcnow():
+        h = t.hour
+        stressed = h in (9, 10, 18) and random.random() < .7
+        asleep = h < 6
+        hr = random.gauss(104 if stressed else (54 if asleep else 70), 5)
+        hrv = max(5, random.gauss(17 if stressed else 55, 6))
+        gsr = max(.5, random.gauss(13 if stressed else 4, 1.2))
+        c.execute("INSERT INTO readings(patient_id,ts,heart_rate,hrv,skin_conductance,steps) VALUES(?,?,?,?,?,?)",
+                  (pid, t.strftime("%Y-%m-%d %H:%M:%S"), round(hr, 1), round(hrv, 1), round(gsr, 2),
+                   0 if asleep or stressed else random.randint(0, 60)))
+        t += timedelta(minutes=15)
+    for d in range(7, 0, -1):
+        c.execute("INSERT INTO moods(patient_id,ts,score,note) VALUES(?,?,?,?)",
+                  (pid, (datetime.utcnow() - timedelta(days=d)).strftime("%Y-%m-%d %H:%M:%S"),
+                   random.choice([3, 4, 5, 6, 7]), "Demo check-in"))
+    c.execute("INSERT INTO alerts(patient_id,ts,kind,message) VALUES(?,?,?,?)",
+              (pid, datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), "high_hr", "Elevated heart rate at rest (108 bpm)."))
+    c.commit()
+print("Seeded. Device token for demo patient: demo-device-token")
