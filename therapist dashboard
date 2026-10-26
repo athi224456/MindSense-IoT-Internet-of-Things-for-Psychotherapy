@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block content %}<h1>Patients</h1>
+<p><a class="btn" href="{{ url_for('patient_new') }}">+ Add patient</a></p>
+<div class="scroll"><table><tr><th>Patient</th><th>Last reading</th><th>HR</th><th>HRV</th><th>Arousal*</th><th>Last mood</th><th>Alerts</th><th></th></tr>
+{% for x in rows %}<tr><td>{{ x.p.name }}</td>
+<td>{{ x.r.ts if x.r else '—' }}</td><td>{{ x.r.heart_rate|round|int if x.r and x.r.heart_rate else '—' }}</td>
+<td>{{ x.r.hrv|round|int if x.r and x.r.hrv else '—' }}</td>
+<td>{% if x.r %}{{ stress_index(x.r.heart_rate, x.r.hrv, x.r.skin_conductance) }}{% else %}—{% endif %}</td>
+<td>{{ x.m.score ~ '/10' if x.m else '—' }}</td>
+<td>{% if x.alerts %}<span class="badge">{{ x.alerts }}</span>{% else %}0{% endif %}</td>
+<td><a class="btn sec" href="{{ url_for('patient_detail', pid=x.p.id) }}">Open</a></td></tr>
+{% else %}<tr><td colspan="8">No patients yet.</td></tr>{% endfor %}</table></div>
+<p class="muted">*Illustrative 0–100 physiological arousal index, not a diagnostic measure.</p>{% endblock %}
