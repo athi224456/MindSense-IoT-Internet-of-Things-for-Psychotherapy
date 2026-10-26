@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}<h1>Add patient</h1>
+<p class="muted">Obtain the patient's informed consent before enabling any data collection.</p>
+<form class="stack" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+<input name="name" placeholder="Patient name" required><input type="email" name="email" placeholder="Patient email" required>
+<input type="password" name="password" placeholder="Temporary password (min 8)" required><button class="btn">Add patient</button></form>{% endblock %}
