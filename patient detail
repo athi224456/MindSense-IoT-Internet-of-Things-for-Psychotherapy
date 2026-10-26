@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% block content %}
+<h1>{{ p.name }}</h1>
+<p>{% for h in (6,24,72,168) %}<a class="btn {{ '' if h==hours else 'sec' }}" href="?hours={{ h }}">{{ h }}h</a> {% endfor %}
+<span class="muted">{{ n }} readings in window</span></p>
+<div class="cols">
+<div class="card"><b>Heart rate (bpm)</b>{{ spark(charts.hr, threshold=HR) }}</div>
+<div class="card"><b>HRV RMSSD (ms)</b>{{ spark(charts.hrv, color='#2e8b57', threshold=HRV) }}</div>
+<div class="card"><b>Skin conductance (µS)</b>{{ spark(charts.gsr, color='#8e5ea2', threshold=GSR) }}</div>
+<div class="card"><b>Self-reported mood (last 14)</b>{{ spark(charts.mood, lo=1, hi=10, color='#d68910') }}</div></div>
+<div class="cols"><div class="card"><h3>Alerts</h3><div class="scroll"><table>
+{% for a in alerts %}<tr><td>{{ a.ts }}</td><td>{{ a.message }}</td><td>{% if a.acknowledged %}✓{% else %}
+<form method="post" action="{{ url_for('ack_alert', aid=a.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn sec">Acknowledge</button></form>{% endif %}</td></tr>
+{% else %}<tr><td>No alerts.</td></tr>{% endfor %}</table></div></div>
+<div class="card"><h3>Mood check-ins</h3><table>{% for m in moods %}<tr><td>{{ m.ts }}</td><td>{{ m.score }}/10</td><td>{{ m.note or '' }}</td></tr>{% else %}<tr><td>None yet.</td></tr>{% endfor %}</table></div></div>
+<div class="card"><h3>Session notes</h3>
+<form class="stack" method="post" action="{{ url_for('add_note', pid=p.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+<textarea name="body" placeholder="Add a note..." required></textarea><button class="btn">Save note</button></form><br>
+{% for n in notes %}<p><span class="muted">{{ n.ts }}</span><br>{{ n.body }}</p>{% endfor %}</div>
+<div class="card"><h3>Device setup</h3><p>Token: <code>{{ p.device_token }}</code></p>
+<p class="muted">POST JSON to <code>/api/readings</code> with header <code>X-Device-Token</code>. Or run <code>python simulator.py --token ...</code></p></div>
+{% endblock %}
