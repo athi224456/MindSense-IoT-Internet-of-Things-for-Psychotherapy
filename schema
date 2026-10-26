@@ -1,0 +1,38 @@
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL CHECK(role IN ('therapist','patient')),
+  therapist_id INTEGER REFERENCES users(id),
+  device_token TEXT UNIQUE
+);
+CREATE TABLE IF NOT EXISTS readings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL REFERENCES users(id),
+  ts TEXT NOT NULL,
+  heart_rate REAL, hrv REAL, skin_conductance REAL, steps INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_readings ON readings(patient_id, ts);
+CREATE TABLE IF NOT EXISTS moods (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL REFERENCES users(id),
+  ts TEXT NOT NULL,
+  score INTEGER NOT NULL CHECK(score BETWEEN 1 AND 10),
+  note TEXT
+);
+CREATE TABLE IF NOT EXISTS alerts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL REFERENCES users(id),
+  ts TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  message TEXT NOT NULL,
+  acknowledged INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL REFERENCES users(id),
+  therapist_id INTEGER NOT NULL REFERENCES users(id),
+  ts TEXT NOT NULL,
+  body TEXT NOT NULL
+);
