@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block content %}<h1>Therapist sign-up</h1>
+<form class="stack" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+<input name="name" placeholder="Full name" required><input type="email" name="email" placeholder="Email" required>
+<input type="password" name="password" placeholder="Password (min 8)" required><button class="btn">Create account</button></form>{% endblock %}
